@@ -108,12 +108,14 @@ namespace AuthServer.Api
                 {
                     var authCodeString = await authCodeRepo.GenerateAuthCodeAsync(currentClient.ClientId, currentUser.UserId, codeChallenge, codeChallengeMethod);
                     var authCode = currentClient.AuthorizationCodes.FirstOrDefault(c => c.AuthCodeString == authCodeString);
+                    var user = await userRepo.GetUserByIdAsync(currentClient.UserId);
+                    var identityToken = tokenService.GenerateIdentityToken(user);
                     var tokenPair = await tokenService.GenerateAccessRefreshTokenPair(authCode!);
                     authCode.Used = true;
 
                     var redirectUrl =
                     $"{redirectUri}?" +
-                    $"access_token={tokenPair.Item1.AccessTokenString}&" +
+                    $"identity_token={identityToken}&" +
                     $"access_token={tokenPair.Item1.AccessTokenString}&" +
                     $"refresh_token={tokenPair.Item2.RefreshTokenString}&" +
                     $"state={state}&" +
