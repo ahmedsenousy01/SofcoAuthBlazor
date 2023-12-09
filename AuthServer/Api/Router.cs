@@ -102,7 +102,7 @@ namespace AuthServer.Api
                     $"state={state}&" +
                     $"iss={HttpUtility.UrlEncode(Constants.ServerBaseUrl)}";
 
-                    return Results.Redirect(redirectUrl);
+                    return Results.Redirect(redirectUrl, true);
                 }
                 else if (responseType == "implicit")
                 {
