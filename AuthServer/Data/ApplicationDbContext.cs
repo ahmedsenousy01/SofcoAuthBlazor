@@ -1,15 +1,34 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using AuthServer.Data.Models;
+using Microsoft.EntityFrameworkCore.Storage;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 
 namespace AuthServer.Data;
 
-public class ApplicationDbContext(DbContextOptions options) : DbContext(options)
+public class ApplicationDbContext : DbContext
 {
     public DbSet<User> Users { get; set; }
     public DbSet<Client> Clients { get; set; }
     public DbSet<AuthorizationCode> AuthorizationCodes { get; set; }
     public DbSet<AccessToken> AccessTokens { get; set; }
     public DbSet<RefreshToken> RefreshTokens { get; set; }
+
+    public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
+    {
+        try
+        {
+            var dbCreator = Database.GetService<IDatabaseCreator>() as RelationalDatabaseCreator;
+            if (dbCreator != null)
+            {
+                if (!dbCreator.CanConnect()) dbCreator.Create();
+                if (!dbCreator.HasTables()) dbCreator.CreateTables();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+        }
+    }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
