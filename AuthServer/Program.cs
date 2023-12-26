@@ -51,6 +51,20 @@ if (!app.Environment.IsDevelopment())
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
+else
+{
+    app.MapGet("/info", (ApplicationDbContext db) =>
+    {
+        return Results.Json(new
+        {
+            users = db.Users.ToList(),
+            clients = db.Clients.ToList(),
+            authcodes = db.AuthorizationCodes.ToList(),
+            accesstokens = db.AccessTokens.ToList(),
+            refreshtokens = db.RefreshTokens.ToList()
+        });
+    });
+}
 
 app.UseHttpsRedirection();
 

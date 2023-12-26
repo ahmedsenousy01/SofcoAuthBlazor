@@ -39,11 +39,9 @@ namespace AuthServer.Api
                     await ctx.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, u);
                     return Results.Redirect(ReturnUrl ?? "/");
                 }
-                return Results.Json(new
-                {
-                    status = false,
-                    message = "Username or password incorrect"
-                });
+
+                string error = "Username or password incorrect";
+                return Results.Redirect($"/account/login?error={Uri.EscapeDataString(error)}&ReturnUrl={ReturnUrl}");
             }).RequireCors("privateRoute");
 
             app.MapGet("/authorize",

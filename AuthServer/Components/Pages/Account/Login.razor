@@ -1,6 +1,10 @@
 ﻿@page "/account/login"
 @inject IHttpContextAccessor Http
 
+@if (!string.IsNullOrEmpty(Http.HttpContext!.Request.Query["error"]))
+{
+    <p class="text-danger">@Http.HttpContext.Request.Query["error"]</p>
+}
 <div class="container mt-5">
     <div class="row justify-content-center">
         <div class="col-md-6">
