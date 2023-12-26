@@ -11,6 +11,8 @@ using AuthServer.Utils;
 using AuthServer.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Http.Extensions;
+using AuthServer.Data.Models;
+using System.Text.RegularExpressions;
 
 namespace AuthServer.Api
 {
@@ -18,6 +20,40 @@ namespace AuthServer.Api
     {
         public static void MapOAuthEndpoints(this IEndpointRouteBuilder app)
         {
+            app.MapPost("/client", async (HttpContext ctx, ClientRepository clientRepo) =>
+            {
+                var clientName = ctx.Request.Form["ClientName"].ToString();
+                var redirectURIs = ctx.Request.Form["RedirectURIs"].ToString();
+                var scopes = ctx.Request.Form["Scopes"].ToString();
+                string error;
+
+                // Parse Redirect URIs and Scopes from inputs
+                List<string> r = redirectURIs.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(
+                    uri => uri.Trim()).ToList();
+                List<string> s = scopes.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(scope =>
+                scope.Trim()).ToList();
+
+                // TODO: validation
+
+                var u = ctx.User;
+                var userId = u.Claims.FirstOrDefault(u => u.Type == ClaimTypes.NameIdentifier)!.Value;
+
+                var createdSuccessfully = await clientRepo.CreateClientAsync(new Client
+                {
+                    Name = clientName,
+                    RedirectURIs = r,
+                    Scopes = s
+                }, userId);
+
+                if (createdSuccessfully)
+                {
+                    return Results.Redirect($"/client?result=1");
+                }
+
+                return Results.Redirect($"/client?error={Uri.EscapeDataString("")}");
+
+            });
+
             app.MapPost("/login", async (HttpContext ctx, UserRepository userRepo) =>
             {
                 var email = ctx.Request.Form["email"].ToString();
@@ -43,6 +79,76 @@ namespace AuthServer.Api
                 string error = "Username or password incorrect";
                 return Results.Redirect($"/account/login?error={Uri.EscapeDataString(error)}&ReturnUrl={ReturnUrl}");
             }).RequireCors("privateRoute");
+
+            app.MapPost("/register", async (HttpContext ctx, UserRepository userRepo) =>
+            {
+                var firstName = ctx.Request.Form["FirstName"].ToString();
+                var lastName = ctx.Request.Form["LastName"].ToString();
+                var email = ctx.Request.Form["Email"].ToString();
+                var password = ctx.Request.Form["Password"].ToString();
+                var confirmPassword = ctx.Request.Form["ConfirmPassword"].ToString();
+                List<string> errors = [];
+
+                // validate user (name, email, pass)
+                string namePattern = "^[A-Za-z]{3,50}$";
+                bool isFirstNameValid = Regex.IsMatch(firstName, namePattern);
+                bool isLastNameValid = Regex.IsMatch(lastName, namePattern);
+
+                string emailPattern = "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Z|a-z]{2,}$";
+                bool isEmailValid = Regex.IsMatch(email, emailPattern);
+
+                string passwordPattern = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^\\da-zA-Z]).{8,}$";
+                bool isPasswordValid = Regex.IsMatch(password, passwordPattern);
+                bool confirmPasswordMatch = password == confirmPassword;
+
+                bool clientIsValid = true;
+                if (!isFirstNameValid)
+                {
+                    errors.Add("Invalid first name");
+                    clientIsValid = false;
+                }
+                if (!isLastNameValid)
+                {
+                    errors.Add("Invalid last name");
+                    clientIsValid = false;
+
+                }
+                if (!isEmailValid)
+                {
+                    errors.Add("Invalid email");
+                    clientIsValid = false;
+                }
+                if (!isPasswordValid)
+                {
+                    errors.Add("Invalid password: password must be at least 8 characters long and should have 1 lowercase letter, 1 uppercase letter, 1 number and 1 symbol");
+                    clientIsValid = false;
+                }
+                if (!confirmPasswordMatch)
+                {
+                    errors.Add("Passwords must match");
+                    clientIsValid = false;
+                }
+
+                var u = new User
+                {
+                    FirstName = firstName,
+                    LastName = lastName,
+                    UserName = email,
+                    Email = email,
+                    PasswordHash = password
+                };
+
+                var createdSuccessfully = false;
+                if (clientIsValid)
+                    createdSuccessfully = await userRepo.CreateUserAsync(u);
+
+                if (createdSuccessfully)
+                {
+                    return Results.Redirect($"/account/register?result=1");
+                }
+
+                return Results.Redirect($"/account/register?errors={Uri.EscapeDataString(JsonSerializer.Serialize(errors))}");
+            });
 
             app.MapGet("/authorize",
             async (

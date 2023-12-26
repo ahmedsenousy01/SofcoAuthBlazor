@@ -107,6 +107,7 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<Client>().HasData(
             new Client
             {
+                Name = "sofco pay",
                 ClientId = "sofcopayclientid",
                 RedirectURIs = ["http://localhost:3000"],
                 Scopes = ["openid"],
@@ -114,6 +115,7 @@ public class ApplicationDbContext : DbContext
             },
             new Client
             {
+                Name = "sofco sms",
                 ClientId = "sofcosmsclientid",
                 RedirectURIs = ["http://localhost:3001"],
                 Scopes = ["openid"],

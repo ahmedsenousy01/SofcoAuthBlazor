@@ -1,0 +1,60 @@
+﻿@page "/account/register"
+@inject IHttpContextAccessor Http
+@using System.Text.Json
+
+@if (!string.IsNullOrEmpty(Http.HttpContext!.Request.Query["errors"]))
+{
+    var errors = JsonSerializer.Deserialize<List<string>>(Http.HttpContext!.Request.Query["errors"]!)!;
+    @foreach (var e in errors)
+    {
+        <p class="text-danger">@e</p>
+    }
+}
+@if (!string.IsNullOrEmpty(Http.HttpContext!.Request.Query["result"]))
+{
+    <p class="text-success">Registration successful! Please <a href="/account/login">login</a>.</p>
+}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">Register</div>
+                <div class="card-body">
+                    <form action="/register" method="post">
+                        <div class="form-group">
+                            <label for="FirstName">First Name</label>
+                            <input type="text" name="FirstName" asp-for="FirstName" class="form-control" id="FirstName"
+                                required>
+                        </div>
+                        <div class="form-group">
+                            <label for="LastName">Last Name</label>
+                            <input type="text" name="LastName" asp-for="LastName" class="form-control" id="LastName"
+                                required>
+                        </div>
+                        <div class="form-group">
+                            <label for="Username">Username</label>
+                            <input type="text" name="Username" asp-for="Username" class="form-control" id="Username"
+                                required>
+                        </div>
+                        <div class="form-group">
+                            <label for="inputEmail">Email</label>
+                            <input type="email" name="email" asp-for="Email" class="form-control" id="inputEmail"
+                                required>
+                        </div>
+                        <div class="form-group">
+                            <label for="inputPassword">Password</label>
+                            <input type="password" name="password" asp-for="Password" class="form-control"
+                                id="inputPassword" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="confirmPassword">Confirm Password</label>
+                            <input type="password" name="confirmPassword" asp-for="confirmPassword" class="form-control"
+                                id="confirmPassword" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary mt-3">Register</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
